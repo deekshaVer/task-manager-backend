@@ -6,7 +6,7 @@ async function bootstrap() {
   app.enableCors({
  origin: [
     'http://localhost:5173',
-    'https://task-manager-frontend-6piw.vercel.app'
+    '/\.vercel\.app$/'
   ],
     credentials: true,
   });
