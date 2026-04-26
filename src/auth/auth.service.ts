@@ -18,8 +18,7 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<User>,
   ) {}
 
-  // 🔐 Register
-  async register(email: string, password: string) {
+  async register(name: string, email: string, password: string) {
     const existingUser = await this.usersService.findByEmail(email);
 
     if (existingUser) {
@@ -28,14 +27,21 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.usersService.create(email, hashedPassword);
+    const user = await this.usersService.create(name, email, hashedPassword);
 
     const token = this.generateToken(user);
 
-    return { user, token };
+    return {
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+      },
+      token,
+    };
   }
 
-  // 🔐 Login
+  //  Login
   async login(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
 
@@ -51,14 +57,22 @@ export class AuthService {
 
     const token = this.generateToken(user);
 
-    return { user, token };
+    return {
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+      },
+      token,
+    };
   }
 
-  // 🔑 Generate JWT
+  // Generate JWT
   private generateToken(user: any) {
     const payload = {
       sub: user._id,
       email: user.email,
+      name: user.name,
     };
 
     return this.jwtService.sign(payload);
@@ -80,7 +94,7 @@ export class AuthService {
 
     const resetLink = `http://localhost:5173/reset-password/${token}`;
 
-    // 🔥 send email using Resend
+    // send email using Resend
     await this.emailService.sendResetPasswordEmail(user.email, resetLink);
 
     return { message: 'Reset email sent' };
@@ -97,12 +111,12 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired token');
     }
 
-    // 🔑 Hash password
+    // Hash password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     user.password = hashedPassword;
 
-    // ✅ Properly remove fields
+    //  Properly remove fields
     user.resetToken = null;
     user.resetTokenExpiry = null;
 
